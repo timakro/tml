@@ -8,8 +8,14 @@
     :copyright: 2010-2013 by the TML Team, see AUTHORS for more details.
     :license: GNU GPL, see LICENSE for more details.
 """
+import sys
+
+from PIL import Image
+
 from .constants import *
 from .datafile import DataFileReader, DataFileWriter
+from .items import TileLayer
+from .utils import get_next_tile_coords, add_tile_image_to_final_png, get_image_from_mapres
 
 class MapError(BaseException):
     """Raised when your map is not a valid teeworlds map.
@@ -164,6 +170,76 @@ class Teemap(object):
         self.groups.append(game_group)
         game_layer = items.TileLayer(game=1)
         game_group.layers.append(game_layer)
+
+    def export_to_png(self, output_file_path, progress_bar=False):
+        """Create a png file based on the map."""
+
+        # For each group
+        for group in self.groups:
+            # Keep only the groups where there is a game layer
+            if [l for l in group.layers if l.is_gamelayer]:
+                # Get map size
+                image_width = max([l.width for l in group.layers if isinstance(l, TileLayer)])
+                image_height = max([l.height for l in group.layers if isinstance(l, TileLayer)])
+                # Create a new empty image
+                layer_image = Image.new('RGBA', (image_width * 64, image_height * 64))
+
+                # For each group layer
+                tile_layers = [l for l in group.layers if isinstance(l, TileLayer)]
+                for layer_index, layer in enumerate(tile_layers):
+                    mapres = None
+                    if not layer.is_gamelayer:
+                        # If It's not a gamelayer, get the mapres
+                        mapres = self.images[layer.image_id]
+
+                    # Progress bar
+                    if progress_bar:
+                        sys.stdout.write("\nLayer {}/{}".format(layer_index + 1, len(tile_layers)))
+                        sys.stdout.write("\nTiles in this layer: {}\n".format(len(layer.tiles)))
+                        toolbar_width = 100
+                        sys.stdout.write("[%s]" % (" " * toolbar_width))
+                        sys.stdout.flush()
+                        sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['
+
+                    # For each cell on the layer grid
+                    coord_y = 0
+                    coord_x = 0
+                    for tile_index, tile in enumerate(layer.tiles):
+                        empty_tile = False
+                        if not layer.is_gamelayer:
+                            # If it's not a game layer, we get the tile from the mapres
+                            tile_image = get_image_from_mapres(mapres, tile.coords, tile.flags)
+                        else:
+                            # If it's a game layer, we get the tile from the entities mapres
+                            tile_type = R_TILEINDEX.get(tile.index)
+                            if not tile_type:
+                                empty_tile = True
+                            else:
+                                tile_image = get_image_from_mapres(None, tile.coords, None, True)
+
+                        if not empty_tile:
+                            # Add the tile_image to the final png image
+                            add_tile_image_to_final_png(layer_image, tile_image, (coord_x, coord_y))
+                            if progress_bar and tile_index * toolbar_width / len(layer.tiles) % 1 == 0:
+                                sys.stdout.write("-")
+                                sys.stdout.flush()
+
+                        # Get the next tile coords
+                        coord_x, coord_y = get_next_tile_coords(layer, coord_x, coord_y)
+                        # Repeat the tile on the final png image if it's needed
+                        for x in range(tile.skip):
+                            if not empty_tile:
+                                # Add the tile_image to the final png image
+                                add_tile_image_to_final_png(layer_image, tile_image, (coord_x, coord_y))
+                                if progress_bar and tile_index * toolbar_width / len(layer.tiles) % 1 == 0:
+                                    sys.stdout.write("-")
+                                    sys.stdout.flush()
+
+                            # Get the next tile coords
+                            coord_x, coord_y = get_next_tile_coords(layer, coord_x, coord_y)
+
+                # Save image
+                layer_image.save(output_file_path)
 
     def __repr__(self):
         return '<Teemap ({0})>'.format(self.name or 'new')

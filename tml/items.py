@@ -739,7 +739,7 @@ class Tile(object):
         :returns: (x, y)
 
         """
-        return (self.index % 16, self.index / 16)
+        return (self.index % 16, self.index // 16)
 
     @property
     def flags(self):
