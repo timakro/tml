@@ -16,16 +16,14 @@ import warnings
 from zlib import decompress
 
 try:
-    import png
+    import PIL.Image
 except ImportError:
-    png = False
+    pass
 
 from .constants import ITEM_TYPES, TML_DIR, TILEFLAG_VFLIP, \
      TILEFLAG_HFLIP, TILEFLAG_OPAQUE, TILEFLAG_ROTATE
 from .utils import ints_to_string
 
-#GAMELAYER_IMAGE = PIL.Image.open(os.path.join(TML_DIR,
-#	os.extsep.join(('entities', 'png'))))
 
 class Info(object):
     """Represents a map info object.
@@ -63,19 +61,22 @@ class Image(object):
         self.width = width
         self.height = height
         self.external = external
+        self._image = None
         if external is True:
-            png_path = os.sep.join([TML_DIR, 'mapres', self.name])
-            png_path = os.extsep.join([png_path, 'png'])
+            self.png_path = os.sep.join([TML_DIR, 'mapres', self.name])
+            self.png_path = os.extsep.join([self.png_path, 'png'])
         else:
-            png_path = path
+            self.png_path = path
 
-        if data is None and png:
-            try:
-                png.Reader(str(png_path)).asRGBA()
-            except png.Error:
-                warnings.warn('Image is not in RGBA format')
-            except IOError:
-                warnings.warn('External image "{0}" does not exist'.format(self.name))
+    @property
+    def image(self):
+        if not self._image:
+            if self.external:
+                self._image = PIL.Image.open(self.png_path)
+            else:
+                print(self.png_path)
+                self._image = PIL.Image.frombytes(mode='RGBA', size=(self.width, self.height), data=self.data)
+        return self._image
 
     def save(self, dest):
         """Saves the image to the given path.
@@ -83,21 +84,7 @@ class Image(object):
         :param dest: Path to the image
 
         """
-        if os.path.splitext(dest)[1] != ''.join([os.extsep, 'png']):
-            dest = os.extsep.join([dest, 'png'])
-        if self.external:
-            src = os.sep.join([TML_DIR, 'mapres', self.name])
-            src = os.extsep.join([src, 'png'])
-            if not os.path.exists(src):
-                raise ValueError('External image "{0}" does not exist'.format(self.name))
-            shutil.copyfile(src, dest)
-        else:
-            image = open(dest, 'wb')
-            png_writer = png.Writer(width=self.width, height=self.height, alpha=True)
-            fmt = '{0}B'.format(len(self.data))
-            image_data = unpack(fmt, self.data)
-            png_writer.write_array(image, image_data)
-            image.close()
+        self.image.save(dest)
 
     def __repr__(self):
         return '<Image ({0})>'.format(self.name)
