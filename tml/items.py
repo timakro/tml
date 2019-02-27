@@ -34,8 +34,6 @@ class Info(object):
 
     """
 
-    type_size = 6
-
     def __init__(self, author=None, map_version=None, credits=None, license=None,
                  settings=None):
         self.author = author

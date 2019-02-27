@@ -89,8 +89,11 @@ class DataFileReader(object):
                 item_size, item_data = item
                 fmt = '{0}i'.format(item_size//4)
                 item_data = unpack(fmt, item_data)
-                version, author, map_version, credits, license, \
-                settings = item_data[:items.Info.type_size]
+                version, author, map_version, credits, license = item_data[:5]
+                if item_size//4 >= 6:
+                    settings = item_data[5]
+                else:
+                    settings = -1
                 if author > -1:
                     author = decompress(self.get_compressed_data(f, author))[:-1]
                 else:
