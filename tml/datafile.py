@@ -107,6 +107,10 @@ class DataFileReader(object):
                     license = decompress(self.get_compressed_data(f, license))[:-1]
                 else:
                     license = None
+                if settings > -1:
+                    settings = decompress(self.get_compressed_data(f, settings)).split(b'\x00')[:-1]
+                else:
+                    settings = None
                 self.info = items.Info(author=author, map_version=map_version,
                                        credits=credits, license=license,
                                        settings=settings)

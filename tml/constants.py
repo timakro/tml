@@ -75,4 +75,3 @@ TELEINDEX = {
 }
 
 SPEEDUPINDEX = 28
-R_TILEINDEX = dict([(v, k) for k, v in TILEINDEX.items()])
