@@ -73,7 +73,7 @@ class Image(object):
 
         if data is None and png:
             try:
-                png.Reader(png_path).asRGBA()
+                png.Reader(str(png_path)).asRGBA()
             except png.Error:
                 warnings.warn('Image is not in RGBA format')
             except IOError:
