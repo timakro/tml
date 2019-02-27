@@ -54,19 +54,24 @@ class Image(object):
     # size in ints
     type_size = 6
 
-    def __init__(self, name, width=0, height=0, external=False, data=None,
-                 path=''):
+    def __init__(self, name, width=0, height=0, external=False, data=None, game_version='0.6'):
         self.name = name
         self.data = data
         self.width = width
         self.height = height
         self.external = external
+
+        self.game_version = game_version
         self._image = None
-        if external is True:
-            self.png_path = os.sep.join([TML_DIR, 'mapres', self.name])
-            self.png_path = os.extsep.join([self.png_path, 'png'])
-        else:
-            self.png_path = path
+
+    @property
+    def png_path(self):
+        if self.external is True:
+            if self.game_version == '0.7':
+                png_path = os.sep.join([TML_DIR, 'mapres_0.7', self.name])
+            else:
+                png_path = os.sep.join([TML_DIR, 'mapres', self.name])
+            return os.extsep.join([png_path, 'png'])
 
     @property
     def image(self):

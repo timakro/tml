@@ -44,7 +44,9 @@ class Header(object):
 
 class DataFileReader(object):
 
-    def __init__(self, map_path):
+    def __init__(self, map_path, game_version='0.6'):
+        self.game_version = game_version
+
         # default list of item types
         for type_ in ITEM_TYPES:
             if type_ != 'version' and type_ != 'layer':
@@ -136,7 +138,7 @@ class DataFileReader(object):
                     name = decompress(self.get_compressed_data(f, image_name))[:-1].decode('cp1252')
                 data = decompress(self.get_compressed_data(f, image_data)) if not external else None
                 image = items.Image(external=external, name=name,
-                                   data=data, width=width, height=height)
+                                   data=data, width=width, height=height, game_version=self.game_version)
                 self.images.append(image)
 
             # load groups
