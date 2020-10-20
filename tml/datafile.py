@@ -136,7 +136,7 @@ class DataFileReader(object):
                     name = decompress(self.get_compressed_data(f, image_name))[:-1].decode('utf-8')
                 except UnicodeDecodeError:
                     name = decompress(self.get_compressed_data(f, image_name))[:-1].decode('cp1252')
-                data = decompress(self.get_compressed_data(f, image_data)) if not external else None
+                data = None
                 image = items.Image(external=external, name=name,
                                    data=data, width=width, height=height, game_version=self.game_version)
                 self.images.append(image)
@@ -324,7 +324,8 @@ class DataFileReader(object):
                                                 speedup_tiles=speedup_tiles,
                                                 switch_tiles=switch_tiles,
                                                 tune_tiles=tune_tiles)
-                        layers.append(layer)
+                        if game:
+                            layers.append(layer)
                     elif type_ == LAYERTYPE_QUADS:
                         type_size = items.QuadLayer.type_size
                         version, num_quads, data, image_id = item_data[3:type_size-3]
@@ -338,7 +339,6 @@ class DataFileReader(object):
                         quads = items.QuadManager(data=quad_list)
                         layer = items.QuadLayer(name=name, detail=detail,
                                                 image_id=image_id, quads=quads)
-                        layers.append(layer)
                     elif type_ == LAYERTYPE_SOUNDS:
                         type_size = 10
                         version, num_sources, data, sound = item_data[3:type_size-3]
