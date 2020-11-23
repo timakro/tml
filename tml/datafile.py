@@ -364,17 +364,19 @@ class DataFileReader(object):
                 raise ValueError('A Game group is required')
 
             # load envpoints
-            item_size, item = self.find_item(f, ITEM_ENVPOINT, 0)
-            fmt = '{0}i'.format(item_size//4)
-            item = unpack(fmt, item)
-            type_size = items.Envpoint.type_size
-            for i in range(len(item)//6):
-                point = list(item[(i*6):(i*6+6)])
-                time, curvetype = point[:type_size-4]
-                values = point[type_size-4:type_size]
-                envpoint = items.Envpoint(time=time, curvetype=curvetype,
-                                          values=values)
-                self.envpoints.append(envpoint)
+            item = self.find_item(f, ITEM_ENVPOINT, 0)
+            if item:
+                item_size, item = item
+                fmt = '{0}i'.format(item_size//4)
+                item = unpack(fmt, item)
+                type_size = items.Envpoint.type_size
+                for i in range(len(item)//6):
+                    point = list(item[(i*6):(i*6+6)])
+                    time, curvetype = point[:type_size-4]
+                    values = point[type_size-4:type_size]
+                    envpoint = items.Envpoint(time=time, curvetype=curvetype,
+                                              values=values)
+                    self.envpoints.append(envpoint)
 
             # load envelopes
             start, num = self.get_item_type(ITEM_ENVELOPE)
